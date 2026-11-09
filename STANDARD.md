@@ -39,6 +39,8 @@ The README is a landing page, not a manual.
 - **Roadmap cards are real Issues**, never draft issues — drafts cannot link PRs.
 - A PR links a card with `Closes #N`; the closing keyword only resolves when the PR targets the default branch.
 - The project is public and linked to the repository.
+- PR items get `Date` (latest commit date) and `Start date` (earliest commit date) from `.github/workflows/project-date.yml`. This workflow needs the `PROJECT_TOKEN` secret (a classic PAT with `repo` + `project`), because the default `GITHUB_TOKEN` cannot access Projects v2.
+- The bootstrap sets the `PROJECT_TITLE` repository variable so the workflow can find the project.
 
 ## 5. Branching & release
 
@@ -75,6 +77,8 @@ Automated by `scripts/bootstrap.mjs`:
 - clone `<repo>.wiki.git`, copy localized pages, commit and push
 - create the Projects project, `Date` field and three views, link it to the repository and make it public
 - create `dev`, protect `main` (PR-only, admins enforced) and optionally require CI checks (`requiredChecks`)
+
+Requires a human: add the `PROJECT_TOKEN` repository secret (PAT with `repo` + `project`) so the PR date workflow can write to Projects.
 
 Requires a human (GitHub has no API for these):
 

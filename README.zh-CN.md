@@ -67,6 +67,20 @@ node scripts/bootstrap.mjs --config repo.config.json --pages
 
 默认不启用。如果项目适合把文档做成站点，用 `--pages` 才会复制 `optional/github-pages/`（workflow + `docs/index.md`）。纯程序项目可以完全跳过。
 
+## PR 自动填写项目日期
+
+`template/.github/workflows/project-date.yml` 会在 PR 打开/更新时写入项目字段：
+
+- `Date` = 最新提交日期（终止）
+- `Start date` = 最早提交日期
+
+Projects v2 无法用默认 `GITHUB_TOKEN` 访问，所以要加一个仓库 secret（classic PAT，`repo` + `project`）：
+
+```bash
+gh secret set PROJECT_TOKEN --body "<你的 PAT>"
+gh variable set PROJECT_TITLE --body "My Repo Roadmap"   # 可选；bootstrap 会自动设置
+```
+
 ## 结构
 
 ```

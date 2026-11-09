@@ -291,6 +291,17 @@ async function bootstrapProject(cfg, opts) {
   }
 
   await gql(token, 'mutation($p:ID!){updateProjectV2(input:{projectId:$p,public:true}){projectV2{id public url}}}', { p: project.id });
+  try {
+    await rest(token, 'POST', `/repos/${cfg.owner}/${cfg.repo}/actions/variables`, { name: 'PROJECT_TITLE', value: cfg.projectTitle });
+    log('set repo variable PROJECT_TITLE');
+  } catch {
+    try {
+      await rest(token, 'PATCH', `/repos/${cfg.owner}/${cfg.repo}/actions/variables/PROJECT_TITLE`, { name: 'PROJECT_TITLE', value: cfg.projectTitle });
+      log('updated repo variable PROJECT_TITLE');
+    } catch {
+      log('could not set PROJECT_TITLE variable (needs admin)');
+    }
+  }
   log(`project url: ${project.url}`);
   log('manual: in the Roadmap view choose Date for Start date and Target date; drag tabs to reorder.');
   return project.url;
