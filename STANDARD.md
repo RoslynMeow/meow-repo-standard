@@ -34,13 +34,16 @@ The README is a landing page, not a manual.
 ## 4. Projects rules
 
 - One project per repository: `<Name> Roadmap`.
-- Fields: built-in `Status` (Todo / In Progress / Done) plus a `Date` field.
+- Fields: built-in `Status` (`Todo` / `In Progress` / `Done` / `Cancelled`) plus a `Date` field.
 - Views: list, roadmap, board.
 - **Roadmap cards are real Issues**, never draft issues — drafts cannot link PRs.
 - A PR links a card with `Closes #N`; the closing keyword only resolves when the PR targets the default branch.
 - The project is public and linked to the repository.
 - PR items get `Date` (latest commit date) and `Start date` (earliest commit date) from `.github/workflows/project-date.yml`. This workflow needs the `PROJECT_TOKEN` secret (a classic PAT with `repo` + `project`), because the default `GITHUB_TOKEN` cannot access Projects v2.
 - The bootstrap sets the `PROJECT_TITLE` repository variable so the workflow can find the project.
+- Planning workflow: the agent proposes a plan; only after the user accepts it, create real Issues and add them to the Project as `Todo`.
+- Record every implementation step in the Issue (checklist/comment) and the linked PR; keep the board status current.
+- Cancelled work moves to `Cancelled` (never delete it), so it is not proposed again later.
 
 ## 5. Branching & release
 

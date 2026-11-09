@@ -72,6 +72,15 @@ The bootstrap script is `<standard>/scripts/bootstrap.mjs`; the checker is `<sta
 - README/docs changes to `main` also go through a PR (a small docs PR is fine).
 - Closing keywords (`Closes #N`) only link the roadmap card when the PR targets `main` (the default branch).
 
+## Planning workflow
+
+- Propose the plan first. **Do not create Issues or Project items until the user accepts.**
+- After acceptance, create real Issues (not drafts) and add them to the Project as `Todo`.
+- Record each implementation step in the Issue (checklist update or comment) and the linked PR (`Closes #N`).
+- Move items to `In Progress` when work starts and `Done` when merged.
+- If a plan is cancelled, move its item to `Cancelled`; never delete it, so it is not proposed again.
+- The Project `Status` field must include `Todo`, `In Progress`, `Done` and `Cancelled`.
+
 ## Rules
 
 - README stays a landing page: title, description, badges, one link row. Detail goes to the Wiki.

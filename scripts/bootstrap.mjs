@@ -277,6 +277,15 @@ async function bootstrapProject(cfg, opts) {
     log('created Date field');
   }
 
+  const status = await gql(token, 'query($id:ID!){node(id:$id){... on ProjectV2{field(name:"Status"){... on ProjectV2SingleSelectField{id options{id name color description}}}}}}', { id: project.id });
+  const statusField = status.node.field;
+  if (statusField && !statusField.options.some((o) => o.name === 'Cancelled')) {
+    const options = statusField.options.map((o) => ({ id: o.id, name: o.name, color: o.color, description: o.description || '' }));
+    options.push({ name: 'Cancelled', color: 'RED', description: 'Cancelled; kept for history' });
+    await gql(token, 'mutation($f:ID!,$opts:[ProjectV2SingleSelectFieldOptionInput!]!){updateProjectV2Field(input:{fieldId:$f,singleSelectOptions:$opts}){projectV2Field{... on ProjectV2SingleSelectField{id}}}}', { f: statusField.id, opts: options });
+    log('added Cancelled status');
+  }
+
   const views = await gql(token, 'query($id:ID!){node(id:$id){... on ProjectV2{views(first:20){nodes{name layout}}}}}', { id: project.id });
   const existing = new Set(views.node.views.nodes.map((v) => v.name));
   const wanted = [
