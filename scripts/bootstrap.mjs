@@ -53,6 +53,8 @@ function loadConfig(path) {
     pages: !!cfg.pages,
     wiki: cfg.wiki !== false,
     projectUrl: cfg.projectUrl || '',
+    requiredChecks: Array.isArray(cfg.requiredChecks) ? cfg.requiredChecks : [],
+    strictChecks: !!cfg.strictChecks,
     targetDir: cfg.targetDir || '',
   };
 }
@@ -335,7 +337,7 @@ async function bootstrapBranches(cfg, opts) {
     log('dev already exists');
   }
   await rest(token, 'PUT', `${base}/branches/${mainBranch}/protection`, {
-    required_status_checks: null,
+    required_status_checks: cfg.requiredChecks.length ? { strict: cfg.strictChecks, contexts: cfg.requiredChecks } : null,
     enforce_admins: true,
     required_pull_request_reviews: {
       required_approving_review_count: 0,

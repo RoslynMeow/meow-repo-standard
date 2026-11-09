@@ -7,6 +7,8 @@
   "locales": ["en", "zh-CN"],
   "tier": "standard",
   "projectTitle": "Example Repo Roadmap",
+  "requiredChecks": ["check"],
+  "strictChecks": false,
   "pages": false,
   "wiki": true
 }
