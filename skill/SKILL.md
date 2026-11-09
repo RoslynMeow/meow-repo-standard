@@ -50,13 +50,16 @@ The bootstrap script is `<standard>/scripts/bootstrap.mjs`; the checker is `<sta
    - create `dev` identical to `main` if missing
    - protect `main`: PR-only, no force push, no deletion, enforced for admins
    - require CI checks when `requiredChecks` is set (e.g. `["check"]`)
+   - set the `PROJECT_TITLE` repository variable so project-date can find the project
 
-6. **Finish the manual steps** (GitHub has no API for these):
+6. **Project dates**: the template includes `.github/workflows/project-date.yml`, which writes `Date` (latest commit) and `Start date` (earliest commit) when a PR opens. It needs a `PROJECT_TOKEN` repository secret (classic PAT with `repo` + `project`); the default `GITHUB_TOKEN` cannot access Projects v2. Ask the user to add it.
+
+7. **Finish the manual steps** (GitHub has no API for these):
    - Enable Wiki in Settings → Features, create the first page, then re-run `--wiki`.
    - In the Roadmap view, select `Date` for Start date and Target date.
    - Drag the view tabs into the desired order.
 
-7. **Verify** with `node <path-to>/meow-repo-standard/scripts/repo-check.mjs .`
+8. **Verify** with `node <path-to>/meow-repo-standard/scripts/repo-check.mjs .`
 
 ## Branch rules
 

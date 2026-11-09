@@ -69,6 +69,20 @@ A few things cannot be automated, and the script will remind you:
 
 Pages is **not** enabled by default. If your project can host docs as a site, run with `--pages`; it copies `optional/github-pages/` (workflow + `docs/index.md`). Projects that ship only a program can skip it entirely.
 
+## Project dates on pull requests
+
+`template/.github/workflows/project-date.yml` fills a PR's Project fields on open/update:
+
+- `Date` = latest commit date (end)
+- `Start date` = earliest commit date
+
+Projects v2 cannot be reached with the default `GITHUB_TOKEN`, so add a repository secret (classic PAT with `repo` + `project`):
+
+```bash
+gh secret set PROJECT_TOKEN --body "<your PAT>"
+gh variable set PROJECT_TITLE --body "My Repo Roadmap"   # optional; bootstrap sets it
+```
+
 ## Structure
 
 ```
