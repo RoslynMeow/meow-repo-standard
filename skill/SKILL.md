@@ -8,6 +8,14 @@ description: Use when creating or normalizing a GitHub repository to the Meow Re
 Apply this standard to the current repository. The source of truth is
 `https://github.com/RoslynMeow/meow-repo-standard` (`STANDARD.md`).
 
+## Locating the standard
+
+1. If `MEOW_REPO_STANDARD` is set, use that path.
+2. Else if `E:\Github\meow-repo-standard` exists, use it.
+3. Else clone `https://github.com/RoslynMeow/meow-repo-standard.git` into a temp directory and remove it when done.
+
+The bootstrap script is `<standard>/scripts/bootstrap.mjs`; the checker is `<standard>/scripts/repo-check.mjs`.
+
 ## Workflow
 
 1. **Inspect** the repo: language, current README, whether a Wiki/Projects already exist.
