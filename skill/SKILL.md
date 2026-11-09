@@ -46,12 +46,25 @@ The bootstrap script is `<standard>/scripts/bootstrap.mjs`; the checker is `<sta
    Add `--pages` only if the project can host docs on GitHub Pages.
    Use `--dry-run` first to preview.
 
-5. **Finish the manual steps** (GitHub has no API for these):
+5. **Set up branches** (part of `--all`, or run `--branches`):
+   - create `dev` identical to `main` if missing
+   - protect `main`: PR-only, no force push, no deletion, enforced for admins
+
+6. **Finish the manual steps** (GitHub has no API for these):
    - Enable Wiki in Settings → Features, create the first page, then re-run `--wiki`.
    - In the Roadmap view, select `Date` for Start date and Target date.
    - Drag the view tabs into the desired order.
 
-6. **Verify** with `node <path-to>/meow-repo-standard/scripts/repo-check.mjs .`
+7. **Verify** with `node <path-to>/meow-repo-standard/scripts/repo-check.mjs .`
+
+## Branch rules
+
+- `main` is release/stable and **PR-only**; never commit or push to it directly, including admins.
+- `dev` is the integration branch; all normal development is committed there.
+- Release: open a PR `dev → main` when a version is ready.
+- `feat/*` branches may also target `main` directly via PR.
+- README/docs changes to `main` also go through a PR (a small docs PR is fine).
+- Closing keywords (`Closes #N`) only link the roadmap card when the PR targets `main` (the default branch).
 
 ## Rules
 
