@@ -54,6 +54,8 @@ The bootstrap script is `<standard>/scripts/bootstrap.mjs`; the checker is `<sta
 
 6. **Project dates**: the template includes `.github/workflows/project-date.yml`, which writes `Date` (latest commit) and `Start date` (earliest commit) when a PR opens. It needs a `PROJECT_TOKEN` repository secret (classic PAT with `repo` + `project`); the default `GITHUB_TOKEN` cannot access Projects v2. Ask the user to add it.
 
+7. **Assignees**: `.github/workflows/project-assignee.yml` assigns a new PR to its author unless it already has one. It uses the repository `GITHUB_TOKEN` (no PAT); a manual Project change is not overwritten.
+
 7. **Finish the manual steps** (GitHub has no API for these):
    - Enable Wiki in Settings → Features, create the first page, then re-run `--wiki`.
    - In the Roadmap view, select `Date` for Start date and Target date.
