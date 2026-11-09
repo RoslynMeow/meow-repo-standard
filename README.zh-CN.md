@@ -74,6 +74,8 @@ node scripts/bootstrap.mjs --config repo.config.json --pages
 - `Date` = 最新提交日期（终止）
 - `Start date` = 最早提交日期
 
+`template/.github/workflows/project-assignee.yml` 会把新 PR 指派给它的作者（提交人），已有 assignee 时不覆盖；使用仓库自带 `GITHUB_TOKEN`，不需要 PAT。
+
 Projects v2 无法用默认 `GITHUB_TOKEN` 访问，所以要加一个仓库 secret（classic PAT，`repo` + `project`）：
 
 ```bash

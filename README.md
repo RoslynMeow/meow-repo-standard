@@ -76,6 +76,8 @@ Pages is **not** enabled by default. If your project can host docs as a site, ru
 - `Date` = latest commit date (end)
 - `Start date` = earliest commit date
 
+`template/.github/workflows/project-assignee.yml` assigns a new PR to its author (the submitter) unless it already has an assignee, using the repository `GITHUB_TOKEN` — no PAT needed.
+
 Projects v2 cannot be reached with the default `GITHUB_TOKEN`, so add a repository secret (classic PAT with `repo` + `project`):
 
 ```bash

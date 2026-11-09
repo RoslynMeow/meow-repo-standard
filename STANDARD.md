@@ -62,6 +62,7 @@ Initialization creates `main` and `dev` at the same commit and enables the `main
 
 - `.github/ISSUE_TEMPLATE/bug_report.yml` and `feature_request.yml`.
 - `.github/PULL_REQUEST_TEMPLATE.md` asks for a summary, linked issue and test plan.
+- `.github/workflows/project-assignee.yml` assigns a new PR to its author unless one is already set; manual Project changes are never overwritten.
 - CI runs on PRs and on pushes to the default branch.
 
 ## 7. GitHub Pages (optional)
