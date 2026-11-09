@@ -74,6 +74,7 @@ Automated by `scripts/bootstrap.mjs`:
 - optionally copy the Pages scaffold
 - clone `<repo>.wiki.git`, copy localized pages, commit and push
 - create the Projects project, `Date` field and three views, link it to the repository and make it public
+- create `dev`, protect `main` (PR-only, admins enforced) and optionally require CI checks (`requiredChecks`)
 
 Requires a human (GitHub has no API for these):
 

@@ -49,6 +49,7 @@ The bootstrap script is `<standard>/scripts/bootstrap.mjs`; the checker is `<sta
 5. **Set up branches** (part of `--all`, or run `--branches`):
    - create `dev` identical to `main` if missing
    - protect `main`: PR-only, no force push, no deletion, enforced for admins
+   - require CI checks when `requiredChecks` is set (e.g. `["check"]`)
 
 6. **Finish the manual steps** (GitHub has no API for these):
    - Enable Wiki in Settings → Features, create the first page, then re-run `--wiki`.
