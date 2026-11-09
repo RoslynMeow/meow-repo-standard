@@ -157,7 +157,7 @@ function bootstrapWiki(cfg, vars, opts) {
     return true;
   }
   try {
-    execFileSync('gh', ['repo', 'edit', `${cfg.owner}/${cfg.repo}`, '--enable-wiki'], { stdio: 'ignore' });
+    execFileSync(ghBin(), ['repo', 'edit', `${cfg.owner}/${cfg.repo}`, '--enable-wiki'], { stdio: 'ignore' });
     log('wiki feature enabled (if it was not already)');
   } catch {
     /* gh not installed or no permission; the wiki may already be enabled */
@@ -206,14 +206,24 @@ function bootstrapWiki(cfg, vars, opts) {
   return true;
 }
 
+function ghBin() {
+  if (process.env.GH_BIN) return process.env.GH_BIN;
+  if (process.platform === 'win32') return 'C:\\Program Files\\GitHub CLI\\gh.exe';
+  return 'gh';
+}
+
 function getToken() {
   if (process.env.GITHUB_TOKEN) return process.env.GITHUB_TOKEN;
   if (process.env.GH_TOKEN) return process.env.GH_TOKEN;
-  try {
-    return execFileSync('gh', ['auth', 'token'], { encoding: 'utf8' }).trim();
-  } catch {
-    return '';
+  for (const bin of [process.env.GH_BIN, 'gh', 'C:\\Program Files\\GitHub CLI\\gh.exe'].filter(Boolean)) {
+    try {
+      const t = execFileSync(bin, ['auth', 'token'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+      if (t) return t;
+    } catch {
+      /* try the next candidate */
+    }
   }
+  return '';
 }
 
 async function gql(token, query, variables = {}) {
