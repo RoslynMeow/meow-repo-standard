@@ -15,7 +15,7 @@ const LOCALE_NAMES = {
 };
 
 function parseArgs(argv) {
-  const out = { config: 'repo.config.json', dir: process.cwd(), wiki: false, noWiki: false, project: false, pages: false, force: false, dryRun: false, all: false };
+  const out = { config: 'repo.config.json', dir: process.cwd(), wiki: false, noWiki: false, project: false, branches: false, pages: false, force: false, dryRun: false, all: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--config') out.config = argv[++i];
@@ -23,6 +23,7 @@ function parseArgs(argv) {
     else if (a === '--wiki') out.wiki = true;
     else if (a === '--no-wiki') { out.noWiki = true; out.wiki = false; }
     else if (a === '--project') out.project = true;
+    else if (a === '--branches') out.branches = true;
     else if (a === '--pages') out.pages = true;
     else if (a === '--all') out.all = true;
     else if (a === '--force') out.force = true;
@@ -283,6 +284,62 @@ async function bootstrapProject(cfg, opts) {
   return project.url;
 }
 
+async function rest(token, method, path, body) {
+  const res = await fetch(`https://api.github.com${path}`, {
+    method,
+    headers: {
+      Authorization: `token ${token}`,
+      'User-Agent': 'meow-repo-standard',
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (res.status === 404) return { notFound: true };
+  if (!res.ok) throw new Error(`${method} ${path} -> ${res.status} ${await res.text()}`);
+  return res.status === 204 ? {} : res.json();
+}
+
+async function bootstrapBranches(cfg, opts) {
+  const token = getToken();
+  if (!token) {
+    log('BRANCHES SKIPPED: no GITHUB_TOKEN / GH_TOKEN and gh is not logged in.');
+    return;
+  }
+  log('branches -> main + dev (identical), protect main (PR-only)');
+  if (opts.dryRun) return;
+  const base = `/repos/${cfg.owner}/${cfg.repo}`;
+  const repo = await rest(token, 'GET', base);
+  const mainBranch = repo.default_branch || 'main';
+  const mainRef = await rest(token, 'GET', `${base}/branches/${mainBranch}`);
+  if (mainRef.notFound) {
+    log(`BRANCHES SKIPPED: ${mainBranch} has no commits yet. Push an initial commit first.`);
+    return;
+  }
+  const sha = mainRef.commit.sha;
+  const dev = await rest(token, 'GET', `${base}/branches/dev`);
+  if (dev.notFound) {
+    await rest(token, 'POST', `${base}/git/refs`, { ref: 'refs/heads/dev', sha });
+    log('created dev at main');
+  } else {
+    log('dev already exists');
+  }
+  await rest(token, 'PUT', `${base}/branches/${mainBranch}/protection`, {
+    required_status_checks: null,
+    enforce_admins: true,
+    required_pull_request_reviews: {
+      required_approving_review_count: 0,
+      dismiss_stale_reviews: false,
+      require_code_owner_reviews: false,
+    },
+    restrictions: null,
+    allow_force_pushes: false,
+    allow_deletions: false,
+    required_conversation_resolution: true,
+  });
+  log(`protected ${mainBranch}: PR-only, no force push, no deletion (admins enforced)`);
+}
+
 function printHelp() {
   console.log(`Meow Repo Standard bootstrap
 
@@ -293,8 +350,9 @@ Options:
   --dir <path>      target repo directory (default: cwd)
   --wiki            initialize/push Wiki pages
   --project         create the Projects roadmap (needs gh auth or GITHUB_TOKEN)
+  --branches        create dev and protect main (PR-only)
   --pages           copy the optional GitHub Pages scaffold
-  --all             --wiki + --project
+  --all             --wiki + --project + --branches
   --force           overwrite existing files
   --dry-run         print actions only`);
 }
@@ -304,7 +362,7 @@ async function main() {
   if (opts.help) return printHelp();
   const cfg = loadConfig(opts.config);
   const targetDir = resolve(opts.dir || cfg.targetDir || process.cwd());
-  if (opts.all) { opts.wiki = true; opts.project = true; }
+  if (opts.all) { opts.wiki = true; opts.project = true; opts.branches = true; }
   if (!opts.wiki && !opts.noWiki && cfg.tier !== 'lite' && cfg.wiki) opts.wiki = true;
   if (!opts.project && cfg.tier === 'full') opts.project = true;
   if (!opts.pages && cfg.pages) opts.pages = true;
@@ -312,6 +370,7 @@ async function main() {
   log(`target: ${targetDir}`);
   let projectUrl = cfg.projectUrl;
   if (opts.project) projectUrl = (await bootstrapProject(cfg, opts)) || projectUrl;
+  if (opts.branches) await bootstrapBranches(cfg, opts);
   const vars = makeVars(cfg, projectUrl);
 
   bootstrapTemplates(cfg, targetDir, vars, opts);

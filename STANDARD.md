@@ -40,17 +40,33 @@ The README is a landing page, not a manual.
 - A PR links a card with `Closes #N`; the closing keyword only resolves when the PR targets the default branch.
 - The project is public and linked to the repository.
 
-## 5. Issue / PR rules
+## 5. Branching & release
+
+Every repository starts with two identical branches:
+
+- **`main`** — stable / release. **PR-only**: no direct pushes, no force pushes, no deletion. The rule is enforced for admins too, so every change to `main` is recorded by a PR.
+- **`dev`** — integration. All day-to-day development is committed here.
+
+Flow:
+
+- Normal work: commit on `dev`. When a version is ready, open a PR `dev → main`.
+- `feat/*` branches may also open a PR directly to `main`.
+- README/docs changes also reach `main` through a PR, never a direct push.
+- `main` stays the default branch, so `Closes #N` in a PR targeting `main` links the roadmap card.
+
+Initialization creates `main` and `dev` at the same commit and enables the `main` protection rule.
+
+## 6. Issue / PR rules
 
 - `.github/ISSUE_TEMPLATE/bug_report.yml` and `feature_request.yml`.
 - `.github/PULL_REQUEST_TEMPLATE.md` asks for a summary, linked issue and test plan.
 - CI runs on PRs and on pushes to the default branch.
 
-## 6. GitHub Pages (optional)
+## 7. GitHub Pages (optional)
 
 Pages is opt-in. Some repositories only ship a program, so Pages must never be assumed. `--pages` copies `optional/github-pages/`.
 
-## 7. Automation boundaries
+## 8. Automation boundaries
 
 Automated by `scripts/bootstrap.mjs`:
 
@@ -65,7 +81,7 @@ Requires a human (GitHub has no API for these):
 2. Select `Date` as Start/Target in the Roadmap view.
 3. Reorder view tabs.
 
-## 8. Known pitfalls (encoded in the script)
+## 9. Known pitfalls (encoded in the script)
 
 - Repository templates do **not** copy the Wiki or Projects.
 - `updateProjectV2View` that only changes `name` resets the layout to `TABLE`; always pass `layout`.
