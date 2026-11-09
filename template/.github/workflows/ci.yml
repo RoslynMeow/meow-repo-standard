@@ -1,0 +1,38 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        if: ${{ hashFiles('package.json') != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        if: ${{ hashFiles('package.json') != '' }}
+        run: npm ci
+
+      - name: Typecheck
+        if: ${{ hashFiles('package.json') != '' }}
+        run: npm run typecheck --if-present
+
+      - name: Lint
+        if: ${{ hashFiles('package.json') != '' }}
+        run: npm run lint --if-present
+
+      - name: Test
+        if: ${{ hashFiles('package.json') != '' }}
+        run: npm test --if-present

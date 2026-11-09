@@ -1,0 +1,12 @@
+{
+  "name": "meow-repo-standard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Reusable GitHub repository standard: minimal README, Wiki docs, Projects roadmap, Issue/PR templates, optional Pages.",
+  "scripts": {
+    "bootstrap": "node scripts/bootstrap.mjs",
+    "check": "node scripts/repo-check.mjs"
+  },
+  "license": "MIT"
+}

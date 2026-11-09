@@ -1,0 +1,12 @@
+{
+  "owner": "RoslynMeow",
+  "repo": "example-repo",
+  "name": "Example Repo",
+  "description": "One-line description of the project.",
+  "defaultLocale": "en",
+  "locales": ["en", "zh-CN"],
+  "tier": "standard",
+  "projectTitle": "Example Repo Roadmap",
+  "pages": false,
+  "wiki": true
+}
