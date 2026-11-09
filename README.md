@@ -4,7 +4,7 @@
 
 **A reusable repository layout: minimal README, Wiki docs, Projects roadmap, Issue/PR templates, optional GitHub Pages.**
 
-[![license](https://img.shields.io/github/license/RoslynMeow/meow-repo-standard?style=flat-square)](LICENSE) [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](../../pulls) [![docs](https://img.shields.io/badge/docs-Wiki-1f6feb?style=flat-square)](../../wiki)
+[![license](https://img.shields.io/github/license/RoslynMeow/meow-repo-standard?style=flat-square)](LICENSE) [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](https://github.com/RoslynMeow/meow-repo-standard/pulls) [![docs](https://img.shields.io/badge/docs-Wiki-1f6feb?style=flat-square)](https://github.com/RoslynMeow/meow-repo-standard/wiki)
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 

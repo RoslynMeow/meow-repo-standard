@@ -23,7 +23,7 @@ jobs:
 
       - name: Install
         if: ${{ hashFiles('package.json') != '' }}
-        run: npm ci
+        run: npm ci || npm install
 
       - name: Typecheck
         if: ${{ hashFiles('package.json') != '' }}

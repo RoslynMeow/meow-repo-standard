@@ -4,7 +4,7 @@
 
 **一套可复用的仓库标准：极简 README、Wiki 文档、Projects 路线图、Issue/PR 模板、可选 GitHub Pages。**
 
-[![license](https://img.shields.io/github/license/RoslynMeow/meow-repo-standard?style=flat-square)](LICENSE) [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](../../pulls) [![docs](https://img.shields.io/badge/docs-Wiki-1f6feb?style=flat-square)](../../wiki)
+[![license](https://img.shields.io/github/license/RoslynMeow/meow-repo-standard?style=flat-square)](LICENSE) [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](https://github.com/RoslynMeow/meow-repo-standard/pulls) [![docs](https://img.shields.io/badge/docs-Wiki-1f6feb?style=flat-square)](https://github.com/RoslynMeow/meow-repo-standard/wiki)
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
