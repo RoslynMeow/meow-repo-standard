@@ -33,31 +33,38 @@ The README is a landing page, not a manual.
 
 ## 4. Projects rules
 
-- One project per repository: `<Name> Roadmap`.
-- Fields: built-in `Status` (`Todo` / `In Progress` / `Done` / `Cancelled`) plus `Date` and `Start date`.
-- Views: `List`, `Roadmap`, `Board`; all filtered to `is:issue`.
+- One project per repository: `<Name> Roadmap` (an emoji in `projectTitle` is allowed).
+- Fields:
+  - built-in `Status`: `Todo` / `In Progress` / `Done` / `Deferred` / `Canceled`
+  - `Start` (DATE) = Issue creation date
+  - `End` (DATE) = Issue close date
+  - `Area` (SINGLE_SELECT), options from `projectAreas`
+  - `Kind` (SINGLE_SELECT), options from `projectKinds` (`Feature` / `Fix` / `Docs` / `Chore` / `Release`)
+- Views: `All Issues` (table), `Board`, `Roadmap`, `Canceled`, `Deferred`; all filtered to `is:issue`.
 - **Project items are Issues only.** Pull requests are implementation artifacts and are never added to the Project.
 - **Roadmap cards are real Issues**, never draft issues.
 - A PR links an issue with `Closes #N`, but the PR itself is not a Project item.
 - The project is public and linked to the repository.
-- Issues get `Start date` = creation date and `Date` = close date from `.github/workflows/project-date.yml`. This workflow needs the `PROJECT_TOKEN` secret (a classic PAT with `repo` + `project`), because the default `GITHUB_TOKEN` cannot access Projects v2.
-- The bootstrap sets the `PROJECT_TITLE` repository variable so the workflow can find the project.
+- Labels: `deferred` (yellow), `canceled` (gray), `area: <slug>` for each area, plus `chore` and `release`.
+- `Start` / `End` are filled from the Issue's creation / close dates when the Issue is added or closed. There is **no** `project-date.yml` workflow and **no** `PROJECT_TOKEN` secret.
 - Planning workflow: the agent proposes a plan; only after the user accepts it, create real Issues and add them to the Project as `Todo`.
-- Record every implementation step in the Issue (checklist/comment). Keep the board status current.
-- Cancelled work moves to `Cancelled` (never delete it), so it is not proposed again later.
+- Record every implementation step in the Issue (checklist/comment). Keep the status current.
+- Deferred work keeps the `deferred` label and `Deferred` status. Canceled work keeps the `canceled` label and `Canceled` status. Never delete it, so it is not proposed again later.
 
 ## 5. Branching & release
 
 Every repository starts with two identical branches:
 
 - **`main`** — stable / release. **PR-only**: no direct pushes, no force pushes, no deletion. The rule is enforced for admins too, so every change to `main` is recorded by a PR.
-- **`dev`** — integration. All day-to-day development is committed here.
+- **`dev`** — integration / development. All day-to-day work is committed here.
+
+There are no long-lived `feat/*` / `fix/*` branches. A temporary branch is allowed only when isolation is really needed, and must be deleted after merge.
 
 Flow:
 
-- Normal work: commit on `dev`. When a version is ready, open a PR `dev → main`.
-- `feat/*` branches may also open a PR directly to `main`.
-- README/docs changes also reach `main` through a PR, never a direct push.
+- Normal work: commit on `dev`.
+- When a version is ready, open a PR `dev → main`.
+- README/docs changes also reach `main` through the same `dev → main` PR.
 - `main` stays the default branch, so `Closes #N` in a PR targeting `main` links the roadmap card.
 
 Initialization creates `main` and `dev` at the same commit and enables the `main` protection rule.
@@ -66,8 +73,8 @@ Initialization creates `main` and `dev` at the same commit and enables the `main
 
 - `.github/ISSUE_TEMPLATE/bug_report.yml` and `feature_request.yml`.
 - `.github/PULL_REQUEST_TEMPLATE.md` asks for a summary, linked issue and test plan.
-- `.github/workflows/project-assignee.yml` assigns a new PR to its opener plus its commit authors (GitHub users, bots excluded, assignable users only, max 10) unless one is already set. PRs are not Project items.
 - CI runs on PRs and on pushes to the default branch.
+- No `project-date` / `project-assignee` workflow is required. Project fields and statuses are maintained by the agent/bootstrap, not by a PAT-based workflow.
 
 ## 7. GitHub Pages (optional)
 
@@ -80,22 +87,25 @@ Automated by `scripts/bootstrap.mjs`:
 - render README and copy `.github/`
 - optionally copy the Pages scaffold
 - clone `<repo>.wiki.git`, copy localized pages, commit and push
-- create the Projects project, `Start date` / `Date` fields and three issue-filtered views, link it to the repository and make it public
+- create the Projects project, `Start` / `End` / `Area` / `Kind` fields, the `Todo` / `In Progress` / `Done` / `Deferred` / `Canceled` status options, five `is:issue` views, and the `deferred` / `canceled` / `area:*` / `chore` / `release` labels
+- link the project to the repository and make it public
 - create `dev`, protect `main` (PR-only, admins enforced) and optionally require CI checks (`requiredChecks`)
-
-Requires a human: add the `PROJECT_TOKEN` repository secret (PAT with `repo` + `project`) so the issue date workflow can write to Projects.
 
 Requires a human (GitHub has no API for these):
 
 1. Enable **Wiki** and create the first page (creates `<repo>.wiki.git`).
-2. Map `Start date` to Start date and `Date` to Target date in the Roadmap view.
-3. Reorder view tabs.
+2. In the **Board** view, group by `Status`.
+3. In the **Roadmap** view, choose `Start` and `End` as the date fields.
+4. Reorder view tabs.
+
+No `PROJECT_TOKEN` secret or `PROJECT_TITLE` variable is needed.
 
 ## 9. Known pitfalls (encoded in the script)
 
 - Repository templates do **not** copy the Wiki or Projects.
 - `updateProjectV2View` that only changes `name` resets the layout to `TABLE`; always pass `layout`.
-- Roadmap start/target fields are view configuration with no public mutation.
+- Roadmap views do not support visible fields; do not pass `configuration` when creating/updating them.
+- Board grouping/sorting and Roadmap start/end field selection are view configuration with no public mutation.
 - Closing keywords do not link when the PR base is not the default branch.
 - Draft issues cannot be assigned through `addAssigneesToAssignable`; use `updateProjectV2DraftIssue` or convert to a real issue.
-- `packages/server/data` style generated files must be gitignored, not committed.
+- Generated data files must be gitignored, not committed.

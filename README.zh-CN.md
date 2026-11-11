@@ -51,11 +51,21 @@ node scripts/bootstrap.mjs --config repo.config.json --pages
 
 `bootstrap.mjs` 是幂等的：只补缺失项；加 `--dry-run` 只打印不修改。
 
+## 分支
+
+只保留两个长期分支：
+
+- **`dev`**：集成分支，所有日常开发都提交到这里。
+- **`main`**：稳定 / 发布分支，**只接受 PR**，不能直接 push。发布时用 `dev → main` PR。
+
+不再使用长期 `feat/*` / `fix/*` 分支。确实需要隔离时可以临时建一个，合并后立即删除。
+
 ## 需要手动完成的步骤（GitHub 限制）
 
 1. 在仓库 Settings → Features 启用 **Wiki**，并创建第一个页面（这样才能生成 `<repo>.wiki.git`）
-2. 在 **Roadmap** 视图里把 Start date 选为 `Start date`，Target date 选为 `Date`（视图的日期字段选择没有 API）
-3. 拖动视图标签排序（视图顺序没有 API）
+2. 在 **Board** 视图里按 `Status` 分组
+3. 在 **Roadmap** 视图里把日期字段选为 `Start` 和 `End`
+4. 拖动视图标签排序（视图顺序没有 API）
 
 ## 多语言
 
@@ -67,20 +77,25 @@ node scripts/bootstrap.mjs --config repo.config.json --pages
 
 默认不启用。如果项目适合把文档做成站点，用 `--pages` 才会复制 `optional/github-pages/`（workflow + `docs/index.md`）。纯程序项目可以完全跳过。
 
-## Issue 自动填写项目日期
+## Project 模式
 
-`template/.github/workflows/project-date.yml` 会在 Issue 打开/关闭时写入项目字段：
+Project 只是 **Issue 的视图**，Issue 才是记录源。
 
-- `Start date` = Issue 创建日期
-- `Date` = Issue 关闭日期
+- Project 只包含 Issue；Pull Request 是实现记录，不会加入。
+- 状态：`Todo` / `In Progress` / `Done` / `Deferred` / `Canceled`。
+- 字段：`Start`（Issue 创建日期）、`End`（Issue 关闭日期）、`Area`、`Kind`。
+- 视图：`All Issues`、`Board`、`Roadmap`、`Canceled`、`Deferred`，全部过滤 `is:issue`。
+- 标签：`deferred`、`canceled`、`area: <slug>`、`chore`、`release`。
+- 不再需要 `project-date.yml` 工作流，也不需要 `PROJECT_TOKEN` secret。
+- 创建或关闭 Issue 时，把它加入 Project，并按 Issue 日期填写 `Start` / `End` / `Area` / `Kind`。
 
-Project 只包含 **Issue**。Pull Request 是实现记录，不会加入 Project。`template/.github/workflows/project-assignee.yml` 仍会给新 PR 指派开 PR 的人和提交作者，但不会创建 Project 条目。
+`Area` / `Kind` 选项可在 `repo.config.json` 配置：
 
-Projects v2 无法用默认 `GITHUB_TOKEN` 访问，所以要加一个仓库 secret（classic PAT，`repo` + `project`）：
-
-```bash
-gh secret set PROJECT_TOKEN --body "<你的 PAT>"
-gh variable set PROJECT_TITLE --body "My Repo Roadmap"   # 可选；bootstrap 会自动设置
+```json
+{
+  "projectAreas": ["App", "Core", "Data", "CI", "Docs", "Deploy"],
+  "projectKinds": ["Feature", "Fix", "Docs", "Chore", "Release"]
+}
 ```
 
 ## 结构

@@ -50,6 +50,12 @@ function loadConfig(path) {
     locales,
     tier: cfg.tier || 'standard',
     projectTitle: cfg.projectTitle || `${cfg.name} Roadmap`,
+    projectAreas: Array.isArray(cfg.projectAreas) && cfg.projectAreas.length
+      ? cfg.projectAreas
+      : ['App', 'Core', 'Data', 'CI', 'Docs', 'Deploy'],
+    projectKinds: Array.isArray(cfg.projectKinds) && cfg.projectKinds.length
+      ? cfg.projectKinds
+      : ['Feature', 'Fix', 'Docs', 'Chore', 'Release'],
     pages: !!cfg.pages,
     wiki: cfg.wiki !== false,
     projectUrl: cfg.projectUrl || '',
@@ -243,6 +249,185 @@ async function gql(token, query, variables = {}) {
   return json.data;
 }
 
+const PROJECT_STATUSES = [
+  { name: 'Todo', color: 'GRAY', description: 'Not started' },
+  { name: 'In Progress', color: 'BLUE', description: 'In progress' },
+  { name: 'Done', color: 'GREEN', description: 'Completed' },
+  { name: 'Deferred', color: 'YELLOW', description: 'Deferred; may be resumed later' },
+  { name: 'Canceled', color: 'GRAY', description: 'Canceled; will not be implemented' },
+];
+const AREA_FIELD_COLORS = ['BLUE', 'PURPLE', 'PINK', 'GREEN', 'ORANGE', 'RED', 'YELLOW', 'GRAY'];
+const KIND_FIELD_COLORS = { Feature: 'BLUE', Fix: 'RED', Docs: 'YELLOW', Chore: 'GRAY', Release: 'GREEN' };
+const AREA_LABEL_COLORS = ['1d76db', '5319e7', 'e99695', '006b75', 'bfd4f2', '0075ca', 'c2e0c6', 'd4c5f9', 'fbca04'];
+
+function labelSlug(value) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+async function ensureLabel(token, owner, repo, name, color, description) {
+  const base = `/repos/${owner}/${repo}/labels`;
+  try {
+    await rest(token, 'POST', base, { name, color, description });
+    log(`created label: ${name}`);
+  } catch {
+    try {
+      await rest(token, 'PATCH', `${base}/${encodeURIComponent(name)}`, { new_name: name, color, description });
+      log(`updated label: ${name}`);
+    } catch {
+      log(`label skipped: ${name}`);
+    }
+  }
+}
+
+async function projectFields(token, projectId) {
+  const data = await gql(
+    token,
+    'query($id:ID!){node(id:$id){... on ProjectV2{fields(first:50){nodes{... on ProjectV2FieldCommon{id name dataType} ... on ProjectV2SingleSelectField{options{id name color description}}}}}}}',
+    { id: projectId },
+  );
+  return data.node.fields.nodes;
+}
+
+async function ensureDateField(token, projectId, name, fields) {
+  if (fields.some((field) => field.name === name)) return;
+  await gql(
+    token,
+    'mutation($p:ID!,$n:String!){createProjectV2Field(input:{projectId:$p,dataType:DATE,name:$n}){projectV2Field{... on ProjectV2Field{id name}}}}',
+    { p: projectId, n: name },
+  );
+  log(`created ${name} field`);
+}
+
+async function ensureSingleSelectField(token, projectId, name, optionNames, colors, fields) {
+  const field = fields.find((entry) => entry.name === name);
+  const existing = field?.options || [];
+  const wanted = optionNames.map((optionName, index) => {
+    const old = existing.find((option) => option.name === optionName);
+    return {
+      ...(old ? { id: old.id } : {}),
+      name: optionName,
+      color: old?.color || colors[index % colors.length],
+      description: old?.description || '',
+    };
+  });
+  for (const old of existing) {
+    if (wanted.some((option) => option.name === old.name)) continue;
+    wanted.push({ id: old.id, name: old.name, color: old.color, description: old.description || '' });
+  }
+
+  if (!field) {
+    await gql(
+      token,
+      'mutation($p:ID!,$n:String!,$opts:[ProjectV2SingleSelectFieldOptionInput!]!){createProjectV2Field(input:{projectId:$p,dataType:SINGLE_SELECT,name:$n,singleSelectOptions:$opts}){projectV2Field{... on ProjectV2SingleSelectField{id name}}}}',
+      { p: projectId, n: name, opts: wanted },
+    );
+    log(`created ${name} field`);
+    return;
+  }
+
+  const same = JSON.stringify(existing.map((o) => [o.id, o.name, o.color, o.description])) ===
+    JSON.stringify(wanted.map((o) => [o.id, o.name, o.color, o.description]));
+  if (same) return;
+  await gql(
+    token,
+    'mutation($f:ID!,$opts:[ProjectV2SingleSelectFieldOptionInput!]!){updateProjectV2Field(input:{fieldId:$f,singleSelectOptions:$opts}){projectV2Field{... on ProjectV2SingleSelectField{id}}}}',
+    { f: field.id, opts: wanted },
+  );
+  log(`updated ${name} options`);
+}
+
+async function ensureStatusField(token, projectId, fields) {
+  const field = fields.find((entry) => entry.name === 'Status');
+  const existing = field?.options || [];
+  const cancelAlias = existing.find((option) => option.name === 'Canceled') ||
+    existing.find((option) => option.name === 'Cancelled');
+  const wanted = PROJECT_STATUSES.map((status) => {
+    const old = existing.find((option) => option.name === status.name) ||
+      (status.name === 'Canceled' ? cancelAlias : undefined);
+    return { ...(old ? { id: old.id } : {}), ...status };
+  });
+  for (const old of existing) {
+    if (wanted.some((option) => option.name === old.name || option.id === old.id)) continue;
+    if (old.name === 'Cancelled') continue;
+    wanted.push({ id: old.id, name: old.name, color: old.color, description: old.description || '' });
+  }
+
+  if (!field) {
+    await gql(
+      token,
+      'mutation($p:ID!,$opts:[ProjectV2SingleSelectFieldOptionInput!]!){createProjectV2Field(input:{projectId:$p,dataType:SINGLE_SELECT,name:"Status",singleSelectOptions:$opts}){projectV2Field{... on ProjectV2SingleSelectField{id name}}}}',
+      { p: projectId, opts: wanted },
+    );
+    log('created Status field');
+    return;
+  }
+
+  const same = JSON.stringify(existing.map((o) => [o.id, o.name, o.color, o.description])) ===
+    JSON.stringify(wanted.map((o) => [o.id, o.name, o.color, o.description]));
+  if (same) return;
+  await gql(
+    token,
+    'mutation($f:ID!,$opts:[ProjectV2SingleSelectFieldOptionInput!]!){updateProjectV2Field(input:{fieldId:$f,singleSelectOptions:$opts}){projectV2Field{... on ProjectV2SingleSelectField{id}}}}',
+    { f: field.id, opts: wanted },
+  );
+  log('updated Status options');
+}
+
+async function ensureViews(token, projectId, fields) {
+  const data = await gql(
+    token,
+    'query($id:ID!){node(id:$id){... on ProjectV2{views(first:30){nodes{id name layout filter}}}}}',
+    { id: projectId },
+  );
+  const existing = data.node.views.nodes;
+  const visibleFieldIds = ['Title', 'Status', 'Start', 'End', 'Area', 'Kind', 'Labels', 'Assignees']
+    .map((name) => fields.find((field) => field.name === name)?.id)
+    .filter(Boolean);
+
+  const specs = [
+    { name: 'All Issues', layout: 'TABLE_LAYOUT', filter: 'is:issue', visible: true },
+    { name: 'Board', layout: 'BOARD_LAYOUT', filter: 'is:issue', visible: true },
+    { name: 'Roadmap', layout: 'ROADMAP_LAYOUT', filter: 'is:issue', visible: false },
+    { name: 'Canceled', layout: 'TABLE_LAYOUT', filter: 'is:issue status:Canceled', visible: true },
+    { name: 'Deferred', layout: 'TABLE_LAYOUT', filter: 'is:issue status:Deferred', visible: true },
+  ];
+
+  const reusableAll = existing.find((view) => view.name === 'All Issues') ||
+    existing.find((view) => view.name === 'List') ||
+    existing.find((view) => view.name === 'View 1');
+
+  for (const spec of specs) {
+    let view = existing.find((entry) => entry.name === spec.name) ||
+      (spec.name === 'All Issues' ? reusableAll : undefined);
+    if (!view) {
+      const created = await gql(
+        token,
+        'mutation($p:ID!,$n:String!,$l:ProjectV2ViewLayout!){createProjectV2View(input:{projectId:$p,name:$n,layout:$l}){projectV2View{id name layout}}}',
+        { p: projectId, n: spec.name, l: spec.layout },
+      );
+      view = created.createProjectV2View.projectV2View;
+      log(`created view: ${spec.name}`);
+    }
+
+    const variables = { v: view.id, n: spec.name, l: spec.layout, f: spec.filter };
+    if (spec.visible) {
+      variables.fields = visibleFieldIds;
+      await gql(
+        token,
+        'mutation($v:ID!,$n:String!,$l:ProjectV2ViewLayout!,$f:String!,$fields:[ID!]!){updateProjectV2View(input:{viewId:$v,name:$n,layout:$l,filter:$f,configuration:{visibleFieldIds:$fields}}){projectV2View{id name layout filter}}}',
+        variables,
+      );
+    } else {
+      await gql(
+        token,
+        'mutation($v:ID!,$n:String!,$l:ProjectV2ViewLayout!,$f:String!){updateProjectV2View(input:{viewId:$v,name:$n,layout:$l,filter:$f}){projectV2View{id name layout filter}}}',
+        variables,
+      );
+    }
+    log(`view ${spec.name}: ${spec.filter}`);
+  }
+}
+
 async function bootstrapProject(cfg, opts) {
   const token = getToken();
   if (!token) {
@@ -251,13 +436,14 @@ async function bootstrapProject(cfg, opts) {
   }
   log(`project -> ${cfg.projectTitle}`);
   if (opts.dryRun) return '';
+
   const viewer = await gql(token, 'query{viewer{id login}}');
   const viewerId = viewer.viewer.id;
   const repo = await gql(token, 'query($owner:String!,$repo:String!){repository(owner:$owner,name:$repo){id}}', { owner: cfg.owner, repo: cfg.repo });
   const repoId = repo.repository.id;
 
   const list = await gql(token, 'query{viewer{projectsV2(first:100){nodes{id number title url}}}}');
-  let project = list.viewer.projectsV2.nodes.find((p) => p.title === cfg.projectTitle);
+  let project = list.viewer.projectsV2.nodes.find((entry) => entry.title === cfg.projectTitle);
   if (!project) {
     const created = await gql(
       token,
@@ -268,65 +454,62 @@ async function bootstrapProject(cfg, opts) {
     log(`created project #${project.number}`);
   } else {
     log(`project exists: #${project.number}`);
-  }
-
-  const fields = await gql(token, 'query($id:ID!){node(id:$id){... on ProjectV2{fields(first:50){nodes{... on ProjectV2FieldCommon{name dataType}}}}}}', { id: project.id });
-  for (const fieldName of ['Start date', 'Date']) {
-    const exists = fields.node.fields.nodes.some((f) => f.name === fieldName);
-    if (exists) continue;
-    await gql(
-      token,
-      'mutation($p:ID!,$n:String!){createProjectV2Field(input:{projectId:$p,dataType:DATE,name:$n}){projectV2Field{... on ProjectV2Field{id name}}}}',
-      { p: project.id, n: fieldName },
-    );
-    log(`created ${fieldName} field`);
-  }
-
-  const status = await gql(token, 'query($id:ID!){node(id:$id){... on ProjectV2{field(name:"Status"){... on ProjectV2SingleSelectField{id options{id name color description}}}}}}', { id: project.id });
-  const statusField = status.node.field;
-  if (statusField && !statusField.options.some((o) => o.name === 'Cancelled')) {
-    const options = statusField.options.map((o) => ({ id: o.id, name: o.name, color: o.color, description: o.description || '' }));
-    options.push({ name: 'Cancelled', color: 'RED', description: 'Cancelled; kept for history' });
-    await gql(token, 'mutation($f:ID!,$opts:[ProjectV2SingleSelectFieldOptionInput!]!){updateProjectV2Field(input:{fieldId:$f,singleSelectOptions:$opts}){projectV2Field{... on ProjectV2SingleSelectField{id}}}}', { f: statusField.id, opts: options });
-    log('added Cancelled status');
-  }
-
-  const views = await gql(token, 'query($id:ID!){node(id:$id){... on ProjectV2{views(first:20){nodes{id name layout}}}}}', { id: project.id });
-  const existing = new Map(views.node.views.nodes.map((v) => [v.name, v]));
-  const wanted = [
-    ['List', 'TABLE_LAYOUT'],
-    ['Roadmap', 'ROADMAP_LAYOUT'],
-    ['Board', 'BOARD_LAYOUT'],
-  ];
-  for (const [name, layout] of wanted) {
-    let view = existing.get(name);
-    if (!view) {
-      const created = await gql(token, 'mutation($p:ID!,$n:String!,$l:ProjectV2ViewLayout!){createProjectV2View(input:{projectId:$p,name:$n,layout:$l}){projectV2View{id name layout}}}', { p: project.id, n: name, l: layout });
-      view = created.createProjectV2View.projectV2View;
-      log(`created view: ${name}`);
+    try {
+      await gql(
+        token,
+        'mutation($p:ID!,$r:ID!){linkProjectV2ToRepository(input:{projectId:$p,repositoryId:$r}){repository{id}}}',
+        { p: project.id, r: repoId },
+      );
+    } catch {
+      /* already linked */
     }
-    await gql(
+  }
+
+  let fields = await projectFields(token, project.id);
+  await ensureDateField(token, project.id, 'Start', fields);
+  await ensureDateField(token, project.id, 'End', fields);
+  await ensureSingleSelectField(
+    token,
+    project.id,
+    'Area',
+    cfg.projectAreas,
+    AREA_FIELD_COLORS,
+    fields,
+  );
+  await ensureSingleSelectField(
+    token,
+    project.id,
+    'Kind',
+    cfg.projectKinds,
+    cfg.projectKinds.map((kind) => KIND_FIELD_COLORS[kind] || 'GRAY'),
+    fields,
+  );
+
+  fields = await projectFields(token, project.id);
+  await ensureStatusField(token, project.id, fields);
+
+  fields = await projectFields(token, project.id);
+  await ensureViews(token, project.id, fields);
+
+  await ensureLabel(token, cfg.owner, cfg.repo, 'deferred', 'fbca04', 'Deferred; may be resumed later');
+  await ensureLabel(token, cfg.owner, cfg.repo, 'canceled', '6e7781', 'Canceled; will not be implemented');
+  await ensureLabel(token, cfg.owner, cfg.repo, 'chore', 'fef2c0', 'Maintenance / cleanup / engineering task');
+  await ensureLabel(token, cfg.owner, cfg.repo, 'release', 'b60205', 'Release related');
+  for (let i = 0; i < cfg.projectAreas.length; i++) {
+    const area = cfg.projectAreas[i];
+    await ensureLabel(
       token,
-      'mutation($v:ID!,$l:ProjectV2ViewLayout!,$f:String!){updateProjectV2View(input:{viewId:$v,layout:$l,filter:$f}){projectV2View{id name layout filter}}}',
-      { v: view.id, l: layout, f: 'is:issue' },
+      cfg.owner,
+      cfg.repo,
+      `area: ${labelSlug(area)}`,
+      AREA_LABEL_COLORS[i % AREA_LABEL_COLORS.length],
+      `Area: ${area}`,
     );
-    log(`view ${name}: is:issue`);
   }
 
   await gql(token, 'mutation($p:ID!){updateProjectV2(input:{projectId:$p,public:true}){projectV2{id public url}}}', { p: project.id });
-  try {
-    await rest(token, 'POST', `/repos/${cfg.owner}/${cfg.repo}/actions/variables`, { name: 'PROJECT_TITLE', value: cfg.projectTitle });
-    log('set repo variable PROJECT_TITLE');
-  } catch {
-    try {
-      await rest(token, 'PATCH', `/repos/${cfg.owner}/${cfg.repo}/actions/variables/PROJECT_TITLE`, { name: 'PROJECT_TITLE', value: cfg.projectTitle });
-      log('updated repo variable PROJECT_TITLE');
-    } catch {
-      log('could not set PROJECT_TITLE variable (needs admin)');
-    }
-  }
   log(`project url: ${project.url}`);
-  log('manual: in the Roadmap view choose Start date for Start date and Date for Target date; drag tabs to reorder.');
+  log('manual: Board → group by Status; Roadmap → choose Start and End as date fields; drag view tabs to reorder.');
   return project.url;
 }
 
@@ -395,7 +578,7 @@ Options:
   --config <path>   config file (default: repo.config.json)
   --dir <path>      target repo directory (default: cwd)
   --wiki            initialize/push Wiki pages
-  --project         create the Projects roadmap (needs gh auth or GITHUB_TOKEN)
+  --project         create the issue-based Projects roadmap (fields, views, labels)
   --branches        create dev and protect main (PR-only)
   --pages           copy the optional GitHub Pages scaffold
   --all             --wiki + --project + --branches

@@ -19,12 +19,12 @@
 | [功能详解](Features) | 项目能做什么 |
 | [数据源](Data-Sources) | 数据来源与授权 |
 | [架构与开发](Architecture) | 仓库结构与设计 |
-| [路线图](Roadmap) | 已完成与计划 |
+| [路线图](Roadmap) | 基于 Issue 的路线图与 Project 视图 |
 | [FAQ](FAQ) | 故障排查与常见问题 |
 
 ## 常用链接
 
 - [源码仓库](https://github.com/{{OWNER}}/{{REPO}})
 - [Releases](https://github.com/{{OWNER}}/{{REPO}}/releases/latest)
-- [Roadmap 看板]({{PROJECT_URL}})
+- [路线图]({{PROJECT_URL}})
 - [Issues](https://github.com/{{OWNER}}/{{REPO}}/issues)

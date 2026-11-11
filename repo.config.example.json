@@ -7,6 +7,8 @@
   "locales": ["en", "zh-CN"],
   "tier": "standard",
   "projectTitle": "Example Repo Roadmap",
+  "projectAreas": ["App", "Core", "Data", "CI", "Docs", "Deploy"],
+  "projectKinds": ["Feature", "Fix", "Docs", "Chore", "Release"],
   "requiredChecks": ["check"],
   "strictChecks": false,
   "pages": false,
