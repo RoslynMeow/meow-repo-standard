@@ -10,10 +10,15 @@ const readme = join(dir, 'README.md');
 const checks = [
   ['README.md exists', () => existsSync(readme)],
   ['README links to Wiki', () => existsSync(readme) && /\/wiki/.test(readFileSync(readme, 'utf8'))],
+  ['README links to Issues', () => existsSync(readme) && /\/issues/.test(readFileSync(readme, 'utf8'))],
+  ['README links to Projects', () => existsSync(readme) && /\/projects\/\d+/.test(readFileSync(readme, 'utf8'))],
   ['README has a badge', () => existsSync(readme) && /img\.shields\.io|badge\.svg/.test(readFileSync(readme, 'utf8'))],
+  ['CONTRIBUTING.md', () => existsSync(join(dir, 'CONTRIBUTING.md'))],
   ['.github/PULL_REQUEST_TEMPLATE.md', () => existsSync(join(dir, '.github', 'PULL_REQUEST_TEMPLATE.md'))],
   ['.github/ISSUE_TEMPLATE', () => existsSync(join(dir, '.github', 'ISSUE_TEMPLATE'))],
   ['.github/workflows/ci.yml', () => existsSync(join(dir, '.github', 'workflows', 'ci.yml'))],
+  ['no project-date workflow', () => !existsSync(join(dir, '.github', 'workflows', 'project-date.yml'))],
+  ['no project-assignee workflow', () => !existsSync(join(dir, '.github', 'workflows', 'project-assignee.yml'))],
 ];
 
 let failed = 0;

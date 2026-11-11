@@ -2,22 +2,30 @@
 
 ## Branches
 
+Only two long-lived branches:
+
 | Branch | Purpose | Rules |
 | --- | --- | --- |
 | `main` | stable / release | **PR-only** — never push directly, no force push, no deletion |
-| `dev` | integration | commit day-to-day work here |
-| `feat/*`, `fix/*`, `chore/*` | short-lived | branch off `dev`, open a PR |
+| `dev` | integration / development | commit all day-to-day work here |
+
+There are no long-lived `feat/*` / `fix/*` branches. Create a temporary branch only if you really need isolation, and delete it right after the merge.
 
 ## Workflow
 
-1. Create a short-lived branch from `dev`.
-2. Commit with Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:` …).
-3. Open a PR:
-   - normal work: `feat/*` → `dev`
-   - release: `dev` → `main` when a version is ready
-   - a `feat/*` branch may also target `main` directly
-   - README/docs changes also reach `main` through a PR
-4. Link the roadmap issue with `Closes #N` in a PR that targets `main` (the default branch).
+1. Commit directly on `dev` with Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:` …).
+2. Open a PR `dev → main` when a version is ready.
+3. README/docs changes also reach `main` through the same `dev → main` PR.
+
+## Task tracking
+
+- Issues are the source of truth.
+- The GitHub Project is only a view over those Issues.
+- Start time = Issue creation time; end time = Issue close time.
+- Add the Issue to the Project and set `Start` / `End` / `Area` / `Kind` from the Issue.
+- Mark deferred work with the `deferred` label and `Deferred` status.
+- Mark canceled work with the `canceled` label and `Canceled` status.
+- Never delete an Issue or a Project item; keep it for history.
 
 ## Before opening a PR
 

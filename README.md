@@ -16,7 +16,7 @@ A generic, language-agnostic starting point so every repository can follow the s
 
 - a **minimal README** (badges + links only)
 - **detailed docs in the Wiki**
-- a **Projects roadmap** wired to real Issues and PRs
+- a **Projects roadmap** wired to real Issues
 - **Issue / PR templates** and a CI workflow
 - **optional GitHub Pages** (opt-in, because not every project fits Pages)
 
@@ -28,7 +28,7 @@ It is not tied to one language or stack. Content templates ship in English with 
 | --- | --- |
 | **Lite** | README + `.github` templates + CI |
 | **Standard** (default) | Lite + Wiki docs |
-| **Full** | Standard + Projects roadmap + Issue/PR linkage |
+| **Full** | Standard + Projects roadmap + Issue linkage |
 
 ## Quick start
 
@@ -51,13 +51,23 @@ node scripts/bootstrap.mjs --config repo.config.json --pages
 
 `bootstrap.mjs` is idempotent: it only creates what is missing. `--dry-run` prints actions without touching anything.
 
+## Branches
+
+Only two long-lived branches:
+
+- **`dev`** — integration; all day-to-day work is committed here.
+- **`main`** — stable / release; **PR-only**, no direct pushes. Release with a `dev → main` PR.
+
+There are no long-lived `feat/*` / `fix/*` branches. Use a temporary branch only if isolation is really needed, and delete it after merge.
+
 ## Manual steps (GitHub limitations)
 
 A few things cannot be automated, and the script will remind you:
 
 1. Enable **Wiki** in repository Settings → Features, and create the first page (this creates `<repo>.wiki.git`).
-2. In the **Roadmap** view, choose the `Date` field for **Start date** and **Target date** (the view's date-field selection has no API).
-3. Drag view tabs into the order you want (view ordering has no API).
+2. In the **Board** view, group by `Status`.
+3. In the **Roadmap** view, choose `Start` and `End` as the date fields.
+4. Drag view tabs into the order you want (view ordering has no API).
 
 ## Internationalization
 
@@ -69,20 +79,25 @@ A few things cannot be automated, and the script will remind you:
 
 Pages is **not** enabled by default. If your project can host docs as a site, run with `--pages`; it copies `optional/github-pages/` (workflow + `docs/index.md`). Projects that ship only a program can skip it entirely.
 
-## Project dates on pull requests
+## Project mode
 
-`template/.github/workflows/project-date.yml` fills a PR's Project fields on open/update:
+The Project is a **view over Issues**; Issues are the source of truth.
 
-- `Date` = latest commit date (end)
-- `Start date` = earliest commit date
+- Items are Issues only. Pull requests are implementation artifacts and are not added.
+- Status: `Todo` / `In Progress` / `Done` / `Deferred` / `Canceled`.
+- Fields: `Start` (Issue creation date), `End` (Issue close date), `Area`, `Kind`.
+- Views: `All Issues`, `Board`, `Roadmap`, `Canceled`, `Deferred`; all filtered to `is:issue`.
+- Labels: `deferred`, `canceled`, `area: <slug>`, `chore`, `release`.
+- No `project-date.yml` workflow and no `PROJECT_TOKEN` secret are required.
+- When you create or close an Issue, add it to the Project and set `Start` / `End` / `Area` / `Kind` from the Issue.
 
-`template/.github/workflows/project-assignee.yml` assigns a new PR to its opener **and** the GitHub users who authored its commits (bots excluded, only assignable users, max 10) unless it already has an assignee. It uses the repository `GITHUB_TOKEN` — no PAT needed.
+`Area` and `Kind` options are configurable in `repo.config.json`:
 
-Projects v2 cannot be reached with the default `GITHUB_TOKEN`, so add a repository secret (classic PAT with `repo` + `project`):
-
-```bash
-gh secret set PROJECT_TOKEN --body "<your PAT>"
-gh variable set PROJECT_TITLE --body "My Repo Roadmap"   # optional; bootstrap sets it
+```json
+{
+  "projectAreas": ["App", "Core", "Data", "CI", "Docs", "Deploy"],
+  "projectKinds": ["Feature", "Fix", "Docs", "Chore", "Release"]
+}
 ```
 
 ## Structure
