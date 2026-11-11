@@ -16,7 +16,7 @@
 
 - **极简 README**（只放徽章和链接）
 - 详细文档放 **Wiki**
-- 用 **Projects 路线图**，并关联真实 Issue 和 PR
+- 用 **Projects 路线图**，并关联真实 Issue
 - 自带 **Issue / PR 模板** 和 CI
 - **GitHub Pages 可选**（有些纯程序项目不需要）
 
@@ -28,7 +28,7 @@
 | --- | --- |
 | **Lite** | README + `.github` 模板 + CI |
 | **Standard**（默认） | Lite + Wiki 文档 |
-| **Full** | Standard + Projects 路线图 + Issue/PR 关联 |
+| **Full** | Standard + Projects 路线图 + Issue 关联 |
 
 ## 快速开始
 
@@ -54,7 +54,7 @@ node scripts/bootstrap.mjs --config repo.config.json --pages
 ## 需要手动完成的步骤（GitHub 限制）
 
 1. 在仓库 Settings → Features 启用 **Wiki**，并创建第一个页面（这样才能生成 `<repo>.wiki.git`）
-2. 在 **Roadmap** 视图里把 Start date / Target date 都选为 `Date`（视图的日期字段选择没有 API）
+2. 在 **Roadmap** 视图里把 Start date 选为 `Start date`，Target date 选为 `Date`（视图的日期字段选择没有 API）
 3. 拖动视图标签排序（视图顺序没有 API）
 
 ## 多语言
@@ -67,14 +67,14 @@ node scripts/bootstrap.mjs --config repo.config.json --pages
 
 默认不启用。如果项目适合把文档做成站点，用 `--pages` 才会复制 `optional/github-pages/`（workflow + `docs/index.md`）。纯程序项目可以完全跳过。
 
-## PR 自动填写项目日期
+## Issue 自动填写项目日期
 
-`template/.github/workflows/project-date.yml` 会在 PR 打开/更新时写入项目字段：
+`template/.github/workflows/project-date.yml` 会在 Issue 打开/关闭时写入项目字段：
 
-- `Date` = 最新提交日期（终止）
-- `Start date` = 最早提交日期
+- `Start date` = Issue 创建日期
+- `Date` = Issue 关闭日期
 
-`template/.github/workflows/project-assignee.yml` 会把新 PR 指派给**开 PR 的人 + 提交作者**（GitHub 用户，去 bot，只含可指派用户，最多 10 个），已有 assignee 时不覆盖；使用仓库自带 `GITHUB_TOKEN`，不需要 PAT。
+Project 只包含 **Issue**。Pull Request 是实现记录，不会加入 Project。`template/.github/workflows/project-assignee.yml` 仍会给新 PR 指派开 PR 的人和提交作者，但不会创建 Project 条目。
 
 Projects v2 无法用默认 `GITHUB_TOKEN` 访问，所以要加一个仓库 secret（classic PAT，`repo` + `project`）：
 

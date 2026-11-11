@@ -8,7 +8,7 @@ A repository-agnostic documentation and planning standard. The goal is consisten
 | --- | --- |
 | **Lite** | `README.md` (+ translations), `.github/` templates, CI |
 | **Standard** (default) | Lite + `wiki-template/` pushed to the GitHub Wiki |
-| **Full** | Standard + a `Projects` roadmap linked to Issues/PRs |
+| **Full** | Standard + a `Projects` roadmap linked to Issues |
 
 `repo.config.json` → `"tier": "lite" | "standard" | "full"`.
 
@@ -34,15 +34,16 @@ The README is a landing page, not a manual.
 ## 4. Projects rules
 
 - One project per repository: `<Name> Roadmap`.
-- Fields: built-in `Status` (`Todo` / `In Progress` / `Done` / `Cancelled`) plus a `Date` field.
-- Views: list, roadmap, board.
-- **Roadmap cards are real Issues**, never draft issues — drafts cannot link PRs.
-- A PR links a card with `Closes #N`; the closing keyword only resolves when the PR targets the default branch.
+- Fields: built-in `Status` (`Todo` / `In Progress` / `Done` / `Cancelled`) plus `Date` and `Start date`.
+- Views: `List`, `Roadmap`, `Board`; all filtered to `is:issue`.
+- **Project items are Issues only.** Pull requests are implementation artifacts and are never added to the Project.
+- **Roadmap cards are real Issues**, never draft issues.
+- A PR links an issue with `Closes #N`, but the PR itself is not a Project item.
 - The project is public and linked to the repository.
-- PR items get `Date` (latest commit date) and `Start date` (earliest commit date) from `.github/workflows/project-date.yml`. This workflow needs the `PROJECT_TOKEN` secret (a classic PAT with `repo` + `project`), because the default `GITHUB_TOKEN` cannot access Projects v2.
+- Issues get `Start date` = creation date and `Date` = close date from `.github/workflows/project-date.yml`. This workflow needs the `PROJECT_TOKEN` secret (a classic PAT with `repo` + `project`), because the default `GITHUB_TOKEN` cannot access Projects v2.
 - The bootstrap sets the `PROJECT_TITLE` repository variable so the workflow can find the project.
 - Planning workflow: the agent proposes a plan; only after the user accepts it, create real Issues and add them to the Project as `Todo`.
-- Record every implementation step in the Issue (checklist/comment) and the linked PR; keep the board status current.
+- Record every implementation step in the Issue (checklist/comment). Keep the board status current.
 - Cancelled work moves to `Cancelled` (never delete it), so it is not proposed again later.
 
 ## 5. Branching & release
@@ -65,7 +66,7 @@ Initialization creates `main` and `dev` at the same commit and enables the `main
 
 - `.github/ISSUE_TEMPLATE/bug_report.yml` and `feature_request.yml`.
 - `.github/PULL_REQUEST_TEMPLATE.md` asks for a summary, linked issue and test plan.
-- `.github/workflows/project-assignee.yml` assigns a new PR to its opener plus its commit authors (GitHub users, bots excluded, assignable users only, max 10) unless one is already set; manual Project changes are never overwritten.
+- `.github/workflows/project-assignee.yml` assigns a new PR to its opener plus its commit authors (GitHub users, bots excluded, assignable users only, max 10) unless one is already set. PRs are not Project items.
 - CI runs on PRs and on pushes to the default branch.
 
 ## 7. GitHub Pages (optional)
@@ -79,15 +80,15 @@ Automated by `scripts/bootstrap.mjs`:
 - render README and copy `.github/`
 - optionally copy the Pages scaffold
 - clone `<repo>.wiki.git`, copy localized pages, commit and push
-- create the Projects project, `Date` field and three views, link it to the repository and make it public
+- create the Projects project, `Start date` / `Date` fields and three issue-filtered views, link it to the repository and make it public
 - create `dev`, protect `main` (PR-only, admins enforced) and optionally require CI checks (`requiredChecks`)
 
-Requires a human: add the `PROJECT_TOKEN` repository secret (PAT with `repo` + `project`) so the PR date workflow can write to Projects.
+Requires a human: add the `PROJECT_TOKEN` repository secret (PAT with `repo` + `project`) so the issue date workflow can write to Projects.
 
 Requires a human (GitHub has no API for these):
 
 1. Enable **Wiki** and create the first page (creates `<repo>.wiki.git`).
-2. Select `Date` as Start/Target in the Roadmap view.
+2. Map `Start date` to Start date and `Date` to Target date in the Roadmap view.
 3. Reorder view tabs.
 
 ## 9. Known pitfalls (encoded in the script)

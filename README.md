@@ -16,7 +16,7 @@ A generic, language-agnostic starting point so every repository can follow the s
 
 - a **minimal README** (badges + links only)
 - **detailed docs in the Wiki**
-- a **Projects roadmap** wired to real Issues and PRs
+- a **Projects roadmap** wired to real Issues
 - **Issue / PR templates** and a CI workflow
 - **optional GitHub Pages** (opt-in, because not every project fits Pages)
 
@@ -28,7 +28,7 @@ It is not tied to one language or stack. Content templates ship in English with 
 | --- | --- |
 | **Lite** | README + `.github` templates + CI |
 | **Standard** (default) | Lite + Wiki docs |
-| **Full** | Standard + Projects roadmap + Issue/PR linkage |
+| **Full** | Standard + Projects roadmap + Issue linkage |
 
 ## Quick start
 
@@ -56,7 +56,7 @@ node scripts/bootstrap.mjs --config repo.config.json --pages
 A few things cannot be automated, and the script will remind you:
 
 1. Enable **Wiki** in repository Settings → Features, and create the first page (this creates `<repo>.wiki.git`).
-2. In the **Roadmap** view, choose the `Date` field for **Start date** and **Target date** (the view's date-field selection has no API).
+2. In the **Roadmap** view, choose `Start date` for **Start date** and `Date` for **Target date** (the view's date-field selection has no API).
 3. Drag view tabs into the order you want (view ordering has no API).
 
 ## Internationalization
@@ -69,14 +69,14 @@ A few things cannot be automated, and the script will remind you:
 
 Pages is **not** enabled by default. If your project can host docs as a site, run with `--pages`; it copies `optional/github-pages/` (workflow + `docs/index.md`). Projects that ship only a program can skip it entirely.
 
-## Project dates on pull requests
+## Project dates on issues
 
-`template/.github/workflows/project-date.yml` fills a PR's Project fields on open/update:
+`template/.github/workflows/project-date.yml` fills an Issue's Project fields:
 
-- `Date` = latest commit date (end)
-- `Start date` = earliest commit date
+- `Start date` = Issue creation date
+- `Date` = Issue close date
 
-`template/.github/workflows/project-assignee.yml` assigns a new PR to its opener **and** the GitHub users who authored its commits (bots excluded, only assignable users, max 10) unless it already has an assignee. It uses the repository `GITHUB_TOKEN` — no PAT needed.
+Project items are **Issues only**. Pull requests are implementation artifacts and are not added to the Project. `template/.github/workflows/project-assignee.yml` still assigns a new PR to its opener and commit authors, but that does not create a Project item.
 
 Projects v2 cannot be reached with the default `GITHUB_TOKEN`, so add a repository secret (classic PAT with `repo` + `project`):
 

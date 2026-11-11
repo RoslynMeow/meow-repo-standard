@@ -271,10 +271,15 @@ async function bootstrapProject(cfg, opts) {
   }
 
   const fields = await gql(token, 'query($id:ID!){node(id:$id){... on ProjectV2{fields(first:50){nodes{... on ProjectV2FieldCommon{name dataType}}}}}}', { id: project.id });
-  const hasDate = fields.node.fields.nodes.some((f) => f.name === 'Date');
-  if (!hasDate) {
-    await gql(token, 'mutation($p:ID!){createProjectV2Field(input:{projectId:$p,dataType:DATE,name:"Date"}){projectV2Field{... on ProjectV2Field{id name}}}}', { p: project.id });
-    log('created Date field');
+  for (const fieldName of ['Start date', 'Date']) {
+    const exists = fields.node.fields.nodes.some((f) => f.name === fieldName);
+    if (exists) continue;
+    await gql(
+      token,
+      'mutation($p:ID!,$n:String!){createProjectV2Field(input:{projectId:$p,dataType:DATE,name:$n}){projectV2Field{... on ProjectV2Field{id name}}}}',
+      { p: project.id, n: fieldName },
+    );
+    log(`created ${fieldName} field`);
   }
 
   const status = await gql(token, 'query($id:ID!){node(id:$id){... on ProjectV2{field(name:"Status"){... on ProjectV2SingleSelectField{id options{id name color description}}}}}}', { id: project.id });
@@ -286,17 +291,26 @@ async function bootstrapProject(cfg, opts) {
     log('added Cancelled status');
   }
 
-  const views = await gql(token, 'query($id:ID!){node(id:$id){... on ProjectV2{views(first:20){nodes{name layout}}}}}', { id: project.id });
-  const existing = new Set(views.node.views.nodes.map((v) => v.name));
+  const views = await gql(token, 'query($id:ID!){node(id:$id){... on ProjectV2{views(first:20){nodes{id name layout}}}}}', { id: project.id });
+  const existing = new Map(views.node.views.nodes.map((v) => [v.name, v]));
   const wanted = [
     ['List', 'TABLE_LAYOUT'],
     ['Roadmap', 'ROADMAP_LAYOUT'],
     ['Board', 'BOARD_LAYOUT'],
   ];
   for (const [name, layout] of wanted) {
-    if (existing.has(name)) continue;
-    await gql(token, 'mutation($p:ID!,$n:String!,$l:ProjectV2ViewLayout!){createProjectV2View(input:{projectId:$p,name:$n,layout:$l}){projectV2View{id name layout}}}', { p: project.id, n: name, l: layout });
-    log(`created view: ${name}`);
+    let view = existing.get(name);
+    if (!view) {
+      const created = await gql(token, 'mutation($p:ID!,$n:String!,$l:ProjectV2ViewLayout!){createProjectV2View(input:{projectId:$p,name:$n,layout:$l}){projectV2View{id name layout}}}', { p: project.id, n: name, l: layout });
+      view = created.createProjectV2View.projectV2View;
+      log(`created view: ${name}`);
+    }
+    await gql(
+      token,
+      'mutation($v:ID!,$l:ProjectV2ViewLayout!,$f:String!){updateProjectV2View(input:{viewId:$v,layout:$l,filter:$f}){projectV2View{id name layout filter}}}',
+      { v: view.id, l: layout, f: 'is:issue' },
+    );
+    log(`view ${name}: is:issue`);
   }
 
   await gql(token, 'mutation($p:ID!){updateProjectV2(input:{projectId:$p,public:true}){projectV2{id public url}}}', { p: project.id });
@@ -312,7 +326,7 @@ async function bootstrapProject(cfg, opts) {
     }
   }
   log(`project url: ${project.url}`);
-  log('manual: in the Roadmap view choose Date for Start date and Target date; drag tabs to reorder.');
+  log('manual: in the Roadmap view choose Start date for Start date and Date for Target date; drag tabs to reorder.');
   return project.url;
 }
 

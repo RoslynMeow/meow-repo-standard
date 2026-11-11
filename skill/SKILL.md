@@ -52,13 +52,13 @@ The bootstrap script is `<standard>/scripts/bootstrap.mjs`; the checker is `<sta
    - require CI checks when `requiredChecks` is set (e.g. `["check"]`)
    - set the `PROJECT_TITLE` repository variable so project-date can find the project
 
-6. **Project dates**: the template includes `.github/workflows/project-date.yml`, which writes `Date` (latest commit) and `Start date` (earliest commit) when a PR opens. It needs a `PROJECT_TOKEN` repository secret (classic PAT with `repo` + `project`); the default `GITHUB_TOKEN` cannot access Projects v2. Ask the user to add it.
+6. **Project dates**: the template includes `.github/workflows/project-date.yml`, which writes `Start date` = Issue creation date and `Date` = Issue close date. Project items are Issues only; PRs are never added. It needs a `PROJECT_TOKEN` repository secret (classic PAT with `repo` + `project`); the default `GITHUB_TOKEN` cannot access Projects v2. Ask the user to add it.
 
-7. **Assignees**: `.github/workflows/project-assignee.yml` assigns a new PR to its opener plus its commit authors (GitHub users, bots excluded, assignable users only, max 10) unless it already has one. It uses the repository `GITHUB_TOKEN` (no PAT); a manual Project change is not overwritten.
+7. **Assignees**: `.github/workflows/project-assignee.yml` assigns a new PR to its opener plus its commit authors (GitHub users, bots excluded, assignable users only, max 10) unless it already has one. It uses the repository `GITHUB_TOKEN` (no PAT) and does not add the PR to the Project.
 
 7. **Finish the manual steps** (GitHub has no API for these):
    - Enable Wiki in Settings → Features, create the first page, then re-run `--wiki`.
-   - In the Roadmap view, select `Date` for Start date and Target date.
+   - In the Roadmap view, choose `Start date` for Start date and `Date` for Target date.
    - Drag the view tabs into the desired order.
 
 8. **Verify** with `node <path-to>/meow-repo-standard/scripts/repo-check.mjs .`
@@ -76,8 +76,9 @@ The bootstrap script is `<standard>/scripts/bootstrap.mjs`; the checker is `<sta
 
 - Propose the plan first. **Do not create Issues or Project items until the user accepts.**
 - After acceptance, create real Issues (not drafts) and add them to the Project as `Todo`.
-- Record each implementation step in the Issue (checklist update or comment) and the linked PR (`Closes #N`).
-- Move items to `In Progress` when work starts and `Done` when merged.
+- Project items are Issues only; never add Pull Requests.
+- Record each implementation step in the Issue (checklist update or comment).
+- Move items to `In Progress` when work starts and `Done` when the issue is complete.
 - If a plan is cancelled, move its item to `Cancelled`; never delete it, so it is not proposed again.
 - The Project `Status` field must include `Todo`, `In Progress`, `Done` and `Cancelled`.
 
@@ -85,8 +86,8 @@ The bootstrap script is `<standard>/scripts/bootstrap.mjs`; the checker is `<sta
 
 - README stays a landing page: title, description, badges, one link row. Detail goes to the Wiki.
 - Wiki pages use English filenames; translations are `<Page>.<locale>.md`.
-- Roadmap cards must be real Issues (drafts cannot link PRs).
-- Link PRs with `Closes #N`; the PR must target the default branch for the link to resolve.
+- Roadmap cards must be real Issues; drafts are not Project tasks.
+- PRs may use `Closes #N`, but PRs are implementation artifacts and are not Project items.
 - Never commit generated data or the local Wiki clone; add them to `.gitignore`.
 
 ## Pitfalls
